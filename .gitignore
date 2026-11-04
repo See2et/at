@@ -1,0 +1,5 @@
+node_modules/
+.astraeus/
+.stryker-tmp/
+reports/
+coverage/

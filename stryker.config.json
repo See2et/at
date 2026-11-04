@@ -1,0 +1,15 @@
+{
+  "$schema": "./node_modules/@stryker-mutator/core/schema/stryker-schema.json",
+  "testRunner": "vitest",
+  "testRunnerNodeArgs": ["--preload", "@stryker-mutator/vitest-runner"],
+  "plugins": ["@stryker-mutator/vitest-runner"],
+  "mutate": ["src/domain/tags.ts"],
+  "ignorePatterns": [".astraeus/**"],
+  "coverageAnalysis": "perTest",
+  "reporters": ["clear-text", "json", "html"],
+  "concurrency": 1,
+  "vitest": {
+    "configFile": "vitest.config.ts",
+    "pool": "forks"
+  }
+}

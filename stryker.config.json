@@ -3,7 +3,7 @@
   "testRunner": "vitest",
   "testRunnerNodeArgs": ["--preload", "@stryker-mutator/vitest-runner"],
   "plugins": ["@stryker-mutator/vitest-runner"],
-  "mutate": ["src/domain/tags.ts"],
+  "mutate": ["src/domain/*.ts"],
   "ignorePatterns": [".astraeus/**"],
   "coverageAnalysis": "perTest",
   "reporters": ["clear-text", "json", "html"],

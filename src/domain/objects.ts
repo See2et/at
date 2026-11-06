@@ -1,9 +1,18 @@
 import { err, ok } from "neverthrow";
 import type { Result } from "neverthrow";
-import type { Tags } from "./tags";
-import type { PropertyValueError, PropertyValues, TagNotFoundError } from "./properties";
+import type { Tag, Tags } from "./tags";
+import type {
+  PropertyInput,
+  PropertyValueError,
+  PropertyValues,
+  TagNotFoundError,
+} from "./properties";
 
 export type AtObject = Readonly<{ id: string; title: string; body: string }>;
+export type QueryItem = Readonly<{
+  object: AtObject;
+  attachments: readonly Readonly<{ tag: Tag; properties: PropertyValues }>[];
+}>;
 export type TagAttachment = Readonly<{
   objectId: string;
   tagKey: string;
@@ -41,6 +50,24 @@ export class Objects {
     return object;
   }
 
+  snapshot(): readonly QueryItem[] {
+    return Object.freeze(
+      Array.from(this.#objects.values(), ({ object, attachments }) =>
+        Object.freeze({
+          object,
+          attachments: Object.freeze(
+            Array.from(attachments.values(), (attachment) =>
+              Object.freeze({
+                tag: this.tags.get(attachment.tagKey)!,
+                properties: attachment.properties,
+              }),
+            ),
+          ),
+        }),
+      ),
+    );
+  }
+
   get(id: string): GetObjectResult {
     const state = this.#objects.get(id);
     return state === undefined ? err({ type: "object-not-found" }) : ok(state.object);
@@ -63,14 +90,14 @@ export class Objects {
     return attachment === undefined ? err({ type: "tag-not-attached" }) : ok(attachment);
   }
 
-  attach(objectId: string, tagKey: string, initialValues: PropertyValues): AttachTagResult {
+  attach(objectId: string, tagKey: string, initialValues: PropertyInput): AttachTagResult {
     const found = this.#findObjectForTag(objectId, tagKey);
     if (found.isErr()) return err(found.error);
     const existing = found.value.attachments.get(tagKey);
     if (existing !== undefined) {
       return err({ type: "tag-already-attached", attachment: existing });
     }
-    const validated = this.tags.validateValues(tagKey, initialValues);
+    const validated = this.tags.applyValues(tagKey, initialValues);
     if (validated.isErr()) return err(validated.error);
     const attachment = Object.freeze({ objectId, tagKey, properties: validated.value });
     found.value.attachments.set(tagKey, attachment);
@@ -80,16 +107,15 @@ export class Objects {
   updateProperties(
     objectId: string,
     tagKey: string,
-    values: PropertyValues,
+    values: PropertyInput,
   ): UpdateTagPropertiesResult {
     const found = this.#findObjectForTag(objectId, tagKey);
     if (found.isErr()) return err(found.error);
     const existing = found.value.attachments.get(tagKey);
     if (existing === undefined) return err({ type: "tag-not-attached" });
-    const validated = this.tags.validateValues(tagKey, values);
+    const validated = this.tags.applyValues(tagKey, values, existing.properties);
     if (validated.isErr()) return err(validated.error);
-    const properties = Object.freeze({ ...existing.properties, ...validated.value });
-    const attachment = Object.freeze({ objectId, tagKey, properties });
+    const attachment = Object.freeze({ objectId, tagKey, properties: validated.value });
     found.value.attachments.set(tagKey, attachment);
     return ok(attachment);
   }

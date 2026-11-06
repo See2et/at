@@ -1,10 +1,11 @@
 import { err, ok } from "neverthrow";
 import type { Result } from "neverthrow";
-import { validateValues } from "./properties";
+import { applyValues } from "./properties";
 import type {
   EnsureTagPropertyResult,
   PropertyType,
   PropertyValues,
+  PropertyInput,
   PropertyValueError,
   TagProperty,
 } from "./properties";
@@ -35,6 +36,14 @@ export class Tags {
     return this.#tags.has(key);
   }
 
+  get(key: string): Tag | undefined {
+    return this.#tags.get(key);
+  }
+
+  getProperty(tagKey: string, key: string): TagProperty | undefined {
+    return this.#properties.get(tagKey)?.get(key);
+  }
+
   ensureProperty(tagKey: string, key: string, type: PropertyType): EnsureTagPropertyResult {
     if (!this.has(tagKey)) return err({ type: "tag-not-found" });
     const definitions = this.#properties.get(tagKey) ?? new Map<string, TagProperty>();
@@ -51,15 +60,17 @@ export class Tags {
     return ok(definition);
   }
 
-  validateValues(
+  applyValues(
     tagKey: string,
-    values: PropertyValues,
+    values: PropertyInput,
+    current: PropertyValues = {},
   ): Result<PropertyValues, PropertyValueError> {
     if (!this.has(tagKey)) return err({ type: "tag-not-found" });
-    return validateValues(
+    return applyValues(
       tagKey,
       this.#properties.get(tagKey) ?? new Map<string, TagProperty>(),
       values,
+      current,
     );
   }
 }

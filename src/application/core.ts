@@ -6,13 +6,20 @@ import type {
   AttachTagResult,
   UpdateTagPropertiesResult,
 } from "../domain/objects";
-import type { PropertyType, PropertyValues, EnsureTagPropertyResult } from "../domain/properties";
+import type { PropertyType, PropertyInput, EnsureTagPropertyResult } from "../domain/properties";
 import { Tags } from "../domain/tags";
 import type { EnsureTagResult } from "../domain/tags";
+
+import { query } from "../domain/query";
+import type { QueryOptions, QueryResult } from "../domain/query";
 
 export class Core {
   readonly #tags = new Tags();
   readonly #objects = new Objects(this.#tags);
+
+  query(options: QueryOptions = {}): QueryResult {
+    return query(this.#objects.snapshot(), options, this.#tags);
+  }
 
   ensureTag(key: string, name: string): EnsureTagResult {
     return this.#tags.ensureTag(key, name);
@@ -30,7 +37,7 @@ export class Core {
     return this.#tags.ensureProperty(tagKey, key, type);
   }
 
-  attachTag(objectId: string, tagKey: string, initialValues: PropertyValues = {}): AttachTagResult {
+  attachTag(objectId: string, tagKey: string, initialValues: PropertyInput = {}): AttachTagResult {
     return this.#objects.attach(objectId, tagKey, initialValues);
   }
 
@@ -41,7 +48,7 @@ export class Core {
   updateTagProperties(
     objectId: string,
     tagKey: string,
-    values: PropertyValues,
+    values: PropertyInput,
   ): UpdateTagPropertiesResult {
     return this.#objects.updateProperties(objectId, tagKey, values);
   }

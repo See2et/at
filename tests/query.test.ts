@@ -23,8 +23,8 @@ const titles = (core: Core, options: QueryOptions = {}) =>
     ._unsafeUnwrap()
     .items.map((item) => item.object.title);
 
-describe("query through the public SDK", () => {
-  it("filters within a Tag, returns all Tags, and walks the whole multi-sorted result", () => {
+describe("公開SDKのqueryによるオブジェクト検索", () => {
+  it("指定タグのプロパティで絞り込むと、全付与タグを含む結果を複数のソート条件に従って返し、ページをたどって全件取得できる", () => {
     const core = taskCore();
     core.ensureTag("notes", "Notes")._unsafeUnwrap();
     core.ensureTagProperty("notes", "priority", "number")._unsafeUnwrap();
@@ -64,7 +64,7 @@ describe("query through the public SDK", () => {
     });
   });
 
-  it("distinguishes absent Tags, unset, zero and empty strings, including whole-condition NOT", () => {
+  it("タグ未付与・値の未設定・0・空文字列を区別して絞り込みと並べ替えができ、NOTは条件全体の一致・不一致を反転する", () => {
     const core = taskCore();
     const unset = core.createObject("unset");
     const zero = core.createObject("zero");
@@ -105,7 +105,7 @@ describe("query through the public SDK", () => {
     ).toEqual(["high", "zero", "unset", "bare"]);
   });
 
-  it("defaults to ID string order and 20 results, accepts limits above 100, and marks empty/end pages", () => {
+  it("既定ではIDの文字列順に20件を返し、100件を超える件数も指定でき、空ページと最終ページのnextOffsetはnullになる", () => {
     const core = new Core();
     core.ensureTag("empty", "Empty")._unsafeUnwrap();
     const objects = Array.from({ length: 105 }, (_, i) => core.createObject(String(i)));
@@ -128,7 +128,7 @@ describe("query through the public SDK", () => {
     });
   });
 
-  it("rejects invalid input as Result without executing functions or changing state", () => {
+  it("不正な検索条件・ソート条件・ページ指定にはResultのエラーを返し、入力された関数を実行せず保存済みのデータも変更しない", () => {
     const core = taskCore();
     const object = core.createObject("unchanged");
     let executed = false;
@@ -173,7 +173,7 @@ describe("query through the public SDK", () => {
     expect(core.getTagAttachment(object.id, "task").isErr()).toBe(true);
   });
 
-  it("prevalidates definitions even with no Objects or short-circuit branches, explaining how to repair input", () => {
+  it("検索対象が空または論理条件の一部で結果が決まる場合も、不正な条件には該当箇所と修正方法を示すエラーを返す", () => {
     const core = taskCore();
     const cases: [unknown, string[]][] = [
       [{ filter: { tagKey: "absent" } }, ["filter.tagKey", "absent", "registered", "ensureTag"]],
@@ -217,7 +217,7 @@ describe("query through the public SDK", () => {
     }
   });
 
-  it("freezes complete snapshots, preserves prior results after updates, and isolates Cores", () => {
+  it("検索結果は入れ子の値も書き換えられず、取得後の値の更新や別のCoreインスタンスの操作でも過去の結果は変わらない", () => {
     const core = taskCore();
     const object = core.createObject("original", "body");
     const input = { priority: 3, memo: "before" };
@@ -244,7 +244,7 @@ describe("query through the public SDK", () => {
     expect(titles(core)).toEqual(["original"]);
   });
 
-  it("stores, filters, sorts and unsets literal special keys without reading inherited members", () => {
+  it("__proto__などの特殊なキーも文字どおりに保存・検索・ソート・設定解除でき、継承されたメンバーを値として扱わない", () => {
     const core = new Core();
     const tagKey = "__proto__";
     core.ensureTag(tagKey, "Literal Tag")._unsafeUnwrap();
@@ -284,7 +284,7 @@ describe("query through the public SDK", () => {
     ).toEqual(["first"]);
   });
 
-  it("uses null to unset values, retaining definitions and old snapshots", () => {
+  it("プロパティにnullを指定すると値を未設定にでき、定義と過去の検索結果は保持され、同じプロパティに再設定できる", () => {
     const core = taskCore();
     const unset = core.createObject("unset");
     const set = core.createObject("set");
@@ -312,7 +312,7 @@ describe("query through the public SDK", () => {
     expect(core.ensureTagProperty("task", "priority", "number").isOk()).toBe(true);
   });
 
-  it("validates all writes before unsetting, with no partial changes on unknown/null/undefined inputs", () => {
+  it("nullによる設定解除と型の異なる値・未定義のプロパティ・undefinedを同時に指定すると、エラーを返して既存値を変更せず、新規付与もしない", () => {
     const core = taskCore();
     const object = core.createObject("atomic");
     core.attachTag(object.id, "task", { priority: 3, memo: "before" })._unsafeUnwrap();

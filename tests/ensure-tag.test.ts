@@ -4,8 +4,8 @@ import type { Result } from "neverthrow";
 import { Core } from "../src/index";
 import type { EnsureTagResult, Tag } from "../src/index";
 
-describe("ensureTag through the public SDK", () => {
-  it("creates a tag for a new key, preserving the supplied key and name", () => {
+describe("公開SDKのensureTagによるタグの作成・取得", () => {
+  it("未登録のキーを指定すると、指定したキーと名前のタグを作成して返す", () => {
     const core = new Core();
 
     expectTypeOf<EnsureTagResult>().toEqualTypeOf<Result<Tag, "tag-name-conflict">>();
@@ -22,7 +22,7 @@ describe("ensureTag through the public SDK", () => {
     ).toBe("topic:key");
   });
 
-  it("is idempotent for the same key and name", () => {
+  it("同じキーと名前で繰り返し呼び出すと、同じ内容のタグを返す", () => {
     const core = new Core();
     const expected = ok({ key: "hoge", name: "Hoge" });
 
@@ -30,7 +30,7 @@ describe("ensureTag through the public SDK", () => {
     expect(core.ensureTag("hoge", "Hoge")).toEqual(expected);
   });
 
-  it("rejects a conflicting name without changing existing tags", () => {
+  it("登録済みのキーに異なる名前を指定すると、既存のタグを変更せずtag-name-conflictを返す", () => {
     const core = new Core();
     const expected = ok({ key: "hoge", name: "Hoge" });
     const unrelated = ok({ key: "notes", name: "Notes" });
@@ -52,7 +52,7 @@ describe("ensureTag through the public SDK", () => {
     expect(core.ensureTag("notes", "Notes")).toEqual(unrelated);
   });
 
-  it("allows different keys to have the same name", () => {
+  it("異なるキーに同じ名前を指定すると、それぞれのキーでタグを作成できる", () => {
     const core = new Core();
 
     expect(core.ensureTag("key:one", "same name")).toEqual(

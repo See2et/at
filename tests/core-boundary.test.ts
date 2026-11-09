@@ -2,7 +2,7 @@ import { expect, it } from "vitest";
 import { ok } from "neverthrow";
 import { Core } from "../src/index";
 
-it("does not expose mutable internal tag state", () => {
+it("ensureTagが返したタグの名前やキーを書き換えようとしても、タグの内容は変わらない", () => {
   const core = new Core();
   const result = core.ensureTag("hoge", "Hoge");
   expect(result.isOk()).toBe(true);
@@ -13,7 +13,7 @@ it("does not expose mutable internal tag state", () => {
   expect(core.ensureTag("hoge", "Hoge")).toEqual(ok({ key: "hoge", name: "Hoge" }));
 });
 
-it("keeps Core instances independent", () => {
+it("異なるCoreインスタンスでは、同じキーに別々の名前でタグを登録できる", () => {
   const first = new Core();
   const second = new Core();
 

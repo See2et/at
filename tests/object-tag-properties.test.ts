@@ -11,8 +11,8 @@ function taskCore() {
   return core;
 }
 
-describe("Object and Tag properties through the public SDK", () => {
-  it("creates distinct objects with the supplied title and Markdown, including empty bodies", () => {
+describe("公開SDKによるオブジェクトとタグのプロパティ管理", () => {
+  it("タイトルとMarkdown本文を指定すると、空の本文も保持し、作成するたびに異なるIDのオブジェクトを返す", () => {
     const core = new Core();
     const first = core.createObject("牛乳を買う", "## メモ\n- 帰りに買う");
     const second = core.createObject("牛乳を買う", "");
@@ -27,7 +27,7 @@ describe("Object and Tag properties through the public SDK", () => {
     expect(core.getObject(first.id)).toEqual(ok(first));
   });
 
-  it("attaches initial values, updates only specified values, and returns current values on reattachment", () => {
+  it("タグ付与時の初期値のうち指定した値だけを更新し、再付与時は現在の値を含むtag-already-attachedを返す", () => {
     const core = taskCore();
     const object = core.createObject("牛乳を買う", "");
     const initial = {
@@ -44,7 +44,7 @@ describe("Object and Tag properties through the public SDK", () => {
     expect(core.getTagAttachment(object.id, "task")).toEqual(ok(current));
   });
 
-  it("keeps definitions local to a Tag and preserves definitions and values on a type conflict", () => {
+  it("同名のプロパティをタグごとに異なる型で定義でき、定義済みの型と競合する場合は既存の定義と値を変更しない", () => {
     const core = taskCore();
     const definition = { tagKey: "task", key: "priority", type: "number" };
     expect(core.ensureTagProperty("task", "priority", "number")).toEqual(ok(definition));
@@ -68,7 +68,7 @@ describe("Object and Tag properties through the public SDK", () => {
     );
   });
 
-  it("distinguishes unset values from zero and empty strings", () => {
+  it("初期値を省略するとプロパティは未設定となり、0や空文字列を指定するとその値を保持する", () => {
     const core = taskCore();
     const first = core.createObject("未設定", "");
     const second = core.createObject("設定済み", "");
@@ -80,7 +80,7 @@ describe("Object and Tag properties through the public SDK", () => {
     );
   });
 
-  it("rejects missing targets and unattached updates without implicit creation", () => {
+  it("存在しないオブジェクトやタグへの操作、未付与タグの値の更新はエラーを返し、対象を自動作成・付与しない", () => {
     const core = taskCore();
     const object = core.createObject("未付与", "");
     expect(core.attachTag("missing", "task")).toEqual(err({ type: "object-not-found" }));
@@ -102,7 +102,7 @@ describe("Object and Tag properties through the public SDK", () => {
     expect(core.getTagAttachment(object.id, "task")).toEqual(err({ type: "tag-not-attached" }));
   });
 
-  it("rejects mixed invalid initial values without attaching or retaining a partial value", () => {
+  it("初期値に型の異なる値が含まれる場合はエラーを返し、タグを付与せず、他の初期値も保存しない", () => {
     const core = taskCore();
     const object = core.createObject("買い物", "");
     expect(core.attachTag(object.id, "task", { memo: "残してはいけない", priority: "高" })).toEqual(
@@ -119,7 +119,7 @@ describe("Object and Tag properties through the public SDK", () => {
     );
   });
 
-  it("rejects mixed updates atomically, including unknown properties", () => {
+  it("更新内容に型の異なる値や未定義のプロパティが含まれる場合はエラーを返し、すべての既存値を変更しない", () => {
     const core = taskCore();
     const object = core.createObject("買い物", "");
     const current = {
@@ -140,7 +140,7 @@ describe("Object and Tag properties through the public SDK", () => {
   });
 
   it.each([NaN, Infinity, -Infinity, "3"])(
-    "rejects non-finite numbers or numeric strings (%s)",
+    "数値型のプロパティに有限でない数値や数値文字列（%s）を指定すると、エラーを返してタグを付与しない",
     (priority) => {
       const core = taskCore();
       const object = core.createObject("買い物", "");
@@ -149,7 +149,7 @@ describe("Object and Tag properties through the public SDK", () => {
     },
   );
 
-  it("returns an already-attached error before considering any new initial values", () => {
+  it("付与済みのタグを再付与すると、初期値の省略や不正な値の指定にかかわらず現在の値を含むtag-already-attachedを返す", () => {
     const core = taskCore();
     const object = core.createObject("買い物", "");
     const current = { objectId: object.id, tagKey: "task", properties: { priority: 5 } };
@@ -162,7 +162,7 @@ describe("Object and Tag properties through the public SDK", () => {
     );
   });
 
-  it("does not expose writable state through inputs, returned objects, definitions, or error attachments", () => {
+  it("入力値や返却されたオブジェクト・定義・エラー内の付与情報を書き換えようとしても、保存済みの値や過去の返却値は変わらない", () => {
     const core = taskCore();
     const object = core.createObject("買い物", "本文");
     const values = { memo: "元", priority: 3 };
